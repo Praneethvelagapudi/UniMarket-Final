@@ -6,7 +6,7 @@ Repository owner: [Praneethvelagapudi](https://github.com/Praneethvelagapudi).
 
 ## Current repository status
 
-Only Praneeth's module imports and the repository setup are currently committed. The remaining local project files are reserved for the other members' own authenticated contributions. A fresh checkout is therefore not yet a complete runnable Flutter application: the navigation/build scaffold, remaining UI, booking screens and notification modules still need to be added.
+Praneeth's module imports and Mohith's navigation, state and build imports are now committed through their respective authenticated accounts. A fresh checkout is still not a complete runnable application: Chenchu's booking/notification modules and Poojith's UI modules, including shared application presentation, still need to be added.
 
 The complete local application is version 1.0.3 (4). Its earlier verification included 41 passing Flutter tests, clean analysis, and Android 10 booking/message notification checks. Those are results for the complete application, not a claim that this partial checkout can currently pass the same checks.
 
@@ -15,11 +15,11 @@ The complete local application is version 1.0.3 (4). Its earlier verification in
 | Member | GitHub | Responsibility | Import status |
 | --- | --- | --- | --- |
 | V. Praneeth | [Praneethvelagapudi](https://github.com/Praneethvelagapudi) | Authentication, Firebase, messaging and voice | Included |
-| M. Mohith | [MohithKumar128](https://github.com/MohithKumar128) | Navigation, state and release readiness | Awaiting own account's commits |
+| M. Mohith | [MohithKumar128](https://github.com/MohithKumar128) | Navigation, state and release readiness | Included through authenticated Mohith account |
 | R. Chenchu Siva Sai | [Chenchu2007](https://github.com/Chenchu2007) | Booking confirmations, notifications, payment simulation and PDFs | Awaiting own account's commits |
 | V. Poojith Kumar | [poojithkumarvemisetty](https://github.com/poojithkumarvemisetty) | UI design, theme and responsive layouts | Awaiting own account's commits |
 
-The other three accounts are invited as collaborators with write access and must accept their invitations. An invitation does not itself create contributor credit.
+Teammate accounts are invited as collaborators with write access. Each member must accept the invitation before pushing. An invitation alone does not create contributor credit.
 
 ## Praneeth's published modules
 
@@ -33,7 +33,16 @@ Shared services contain other modules' integration points. Importing a shared fi
 
 ## History and contribution process
 
-This repository was created on 22 October 2026 after the existing application had been developed. Current module commits explicitly import existing work using real dates; they do not establish regular commits during earlier development. Only Praneeth is currently recorded as author and committer here. See [the contribution process](CONTRIBUTING.md) and [team responsibilities](docs/TEAM_CONTRIBUTIONS.md).
+This repository was created on 22 October 2026 after the existing application had been developed. Current module commits explicitly import existing work using real dates; they do not establish regular commits during earlier development. Praneeth and Mohith are recorded as author and committer for their respective imports. Each upload uses that member's authenticated Git account; assisted operations are performed on the account owner's behalf. See [the contribution process](CONTRIBUTING.md) and [team responsibilities](docs/TEAM_CONTRIBUTIONS.md).
+
+## Mohith's published modules
+
+- Flutter bootstrap, shared error handling and dependency configuration.
+- Tab navigation and session restoration checks.
+- Protected-route logout integration and state regression cases.
+- Android build configuration and platform declarations.
+- Existing iOS scaffold, without a claim of iOS device validation.
+- Developer tooling and historical release-readiness documentation.
 
 ## Setup after all modules are added
 

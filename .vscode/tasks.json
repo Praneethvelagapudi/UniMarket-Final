@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "UniMarket: dependencies",
+      "type": "shell",
+      "command": "${config:dart.flutterSdkPath}/bin/flutter.bat",
+      "args": ["pub", "get"],
+      "problemMatcher": []
+    },
+    {
+      "label": "UniMarket: analyze",
+      "type": "shell",
+      "command": "${config:dart.flutterSdkPath}/bin/flutter.bat",
+      "args": ["analyze"],
+      "problemMatcher": []
+    },
+    {
+      "label": "UniMarket: tests",
+      "type": "shell",
+      "command": "${config:dart.flutterSdkPath}/bin/flutter.bat",
+      "args": ["test"],
+      "problemMatcher": []
+    },
+    {
+      "label": "UniMarket: build phone APK",
+      "type": "shell",
+      "command": "${config:dart.flutterSdkPath}/bin/flutter.bat",
+      "args": ["build", "apk", "--release", "--dart-define-from-file=config/firebase.json"],
+      "problemMatcher": []
+    },
+    {
+      "label": "UniMarket: build web",
+      "type": "shell",
+      "command": "${config:dart.flutterSdkPath}/bin/flutter.bat",
+      "args": ["build", "web", "--release", "--dart-define-from-file=config/firebase.json"],
+      "problemMatcher": []
+    }
+  ]
+}

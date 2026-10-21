@@ -9,4 +9,4 @@
 
 The repository owner supplied this allocation from the individual report drafts. The project includes assisted development and shared files. These areas do not establish exclusive authorship of every file or personal execution of earlier project tests.
 
-Only Praneeth's repository setup and assigned module imports are committed in the initial history. The other three accounts are invited, and their modules await their own authorized Git actions. Current imports use real dates and do not recreate a development history for earlier weeks.
+Praneeth's initial six commits contain repository setup and his assigned module imports. Mohith's next six commits import navigation, state, platform scaffolding and release-readiness files after verifying MohithKumar128 Git authentication and write access. Their respective accounts supply both author/committer identity and authenticated uploads. These are assisted actions on the account owners' behalf. Chenchu's and Poojith's modules remain pending. Imports use real dates and do not recreate earlier weeks of development.

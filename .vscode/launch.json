@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "UniMarket - Web browser",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "edge",
+      "preLaunchTask": "UniMarket: dependencies",
+      "toolArgs": [
+        "--dart-define-from-file=config/firebase.json",
+        "--web-port=5174",
+        "--web-hostname=127.0.0.1"
+      ]
+    },
+    {
+      "name": "UniMarket - Android phone (USB connected)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "preLaunchTask": "UniMarket: dependencies",
+      "toolArgs": ["--dart-define-from-file=config/firebase.json"]
+    }
+  ]
+}
