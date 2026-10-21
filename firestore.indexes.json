@@ -1,0 +1,7 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {"collectionGroup": "listing-images", "fieldPath": "data", "indexes": []},
+    {"collectionGroup": "audio", "fieldPath": "data", "indexes": []}
+  ]
+}

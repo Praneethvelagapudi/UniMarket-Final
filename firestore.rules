@@ -1,0 +1,199 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function campus() {
+      return request.auth != null && request.auth.token.email is string &&
+        request.auth.token.email.lower().matches('^cb[.]sc[.]u4[a-z]+[0-9]+@cb[.]students[.]edu$');
+    }
+    function member() {
+      return campus() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function userName(id) { return get(/databases/$(database)/documents/users/$(id)).data.name; }
+    function item(id) { return get(/databases/$(database)/documents/listings/$(id)).data; }
+    function itemAfter(id) { return getAfter(/databases/$(database)/documents/listings/$(id)).data; }
+    function text(value,min,max) { return value is string && value.size() >= min && value.size() <= max; }
+    function price(value) { return value is number && value >= 0 && value <= 1000000; }
+
+    match /users/{uid} {
+      allow read: if campus() && uid == request.auth.uid;
+      allow create: if campus() && uid == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['name','roll','email','department','createdAt']) &&
+        text(request.resource.data.name,2,60) &&
+        request.resource.data.roll.matches('^CB[.]SC[.]U4[A-Z]+[0-9]+$') &&
+        request.resource.data.email == request.auth.token.email.lower() &&
+        request.resource.data.email == request.resource.data.roll.lower() + '@cb.students.edu' &&
+        request.resource.data.department.matches('^[A-Z]+$') &&
+        request.resource.data.roll.matches('^CB[.]SC[.]U4' + request.resource.data.department + '[0-9]+$') &&
+        request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+      match /bookmarks/{listingId} {
+        allow read,delete: if member() && uid == request.auth.uid;
+        allow create,update: if member() && uid == request.auth.uid &&
+          request.resource.data.keys().hasOnly(['title','department','category','imageUrl','salePrice','dailyRate','ownerName','listingId','savedAt']) &&
+          request.resource.data.listingId == listingId &&
+          request.resource.data.title == item(listingId).title &&
+          request.resource.data.department == item(listingId).department &&
+          request.resource.data.category == item(listingId).category &&
+          request.resource.data.imageUrl == item(listingId).imageUrl &&
+          request.resource.data.salePrice == item(listingId).salePrice &&
+          request.resource.data.dailyRate == item(listingId).dailyRate &&
+          request.resource.data.ownerName == item(listingId).ownerName &&
+          request.resource.data.savedAt == request.time;
+      }
+    }
+    match /listings/{id} {
+      allow read: if member();
+      allow create: if member() &&
+        request.resource.data.keys().hasOnly(['title','description','department','category','condition','salePrice','dailyRate','ownerId','ownerName','imageUrl','status','activeBookingId','createdAt']) &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.ownerName == userName(request.auth.uid) &&
+        text(request.resource.data.title,3,80) && text(request.resource.data.description,10,2000) &&
+        request.resource.data.department.matches('^[A-Z]{2,15}$') &&
+        request.resource.data.category in ['Books','Electronics','Lab equipment','Stationery','Other'] &&
+        request.resource.data.condition in ['Like new','Good','Used'] &&
+        price(request.resource.data.salePrice) && price(request.resource.data.dailyRate) &&
+        (request.resource.data.salePrice > 0 || request.resource.data.dailyRate > 0) &&
+        request.resource.data.status == 'available' && request.resource.data.activeBookingId == '' &&
+        request.resource.data.imageUrl in ['', 'firestore:' + id] && request.resource.data.createdAt == request.time;
+      allow update: if member() && (
+        (resource.data.ownerId == request.auth.uid && resource.data.status == 'available' &&
+          request.resource.data.status == 'archived' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+        reserveItem(id) || releaseItem()
+      );
+      allow delete: if false;
+    }
+    function reserveItem(id) {
+      let d = request.resource.data;
+      let b = getAfter(/databases/$(database)/documents/bookings/$(d.activeBookingId)).data;
+      return resource.data.status == 'available' && d.status == 'reserved' &&
+        d.diff(resource.data).affectedKeys().hasOnly(['status','activeBookingId']) &&
+        b.listingId == id && b.buyerId == request.auth.uid && b.status == 'confirmed';
+    }
+    function releaseItem() {
+      let b = get(/databases/$(database)/documents/bookings/$(resource.data.activeBookingId)).data;
+      let after = getAfter(/databases/$(database)/documents/bookings/$(resource.data.activeBookingId)).data;
+      return resource.data.status == 'reserved' && b.status == 'confirmed' &&
+        request.auth.uid in b.participants && after.status in ['cancelled','completed'] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','activeBookingId']) &&
+        request.resource.data.activeBookingId == '' &&
+        request.resource.data.status == (after.status == 'completed' && b.mode == 'buy' ? 'sold' : 'available');
+    }
+    match /listing-images/{listingId} {
+      allow read: if member();
+      allow create: if member() &&
+        request.resource.data.keys().hasOnly(['ownerId','data','contentType','createdAt']) &&
+        request.resource.data.ownerId == request.auth.uid &&
+        itemAfter(listingId).ownerId == request.auth.uid &&
+        itemAfter(listingId).imageUrl == 'firestore:' + listingId &&
+        text(request.resource.data.data,1,240000) && request.resource.data.contentType == 'image/jpeg' &&
+        request.resource.data.createdAt == request.time;
+      allow update,delete: if false;
+    }
+    match /bookings/{id} {
+      allow read: if member() && request.auth.uid in resource.data.participants;
+      allow create: if member() && validBooking(id);
+      allow update: if member() && (simulationPaymentUpdate(id) || (resource.data.status == 'confirmed' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']) &&
+        request.resource.data.updatedAt == request.time && (
+          (request.resource.data.status == 'cancelled' && request.auth.uid in resource.data.participants) ||
+          (request.resource.data.status == 'completed' && resource.data.sellerId == request.auth.uid &&
+            (!('paymentMethod' in resource.data) || resource.data.paymentMethod != 'mock' || resource.data.paymentStatus == 'succeeded'))
+        ) && itemAfter(resource.data.listingId).activeBookingId == '' &&
+        itemAfter(resource.data.listingId).status == (request.resource.data.status == 'completed' && resource.data.mode == 'buy' ? 'sold' : 'available')));
+      allow delete: if false;
+    }
+    function simulationPaymentUpdate(bookingId) {
+      let before = resource.data;
+      let after = request.resource.data;
+      return 'paymentMethod' in before && before.paymentMethod == 'mock' &&
+        before.status == 'confirmed' && before.buyerId == request.auth.uid &&
+        after.diff(before).affectedKeys().hasOnly(['paymentStatus','paymentAttemptId','paymentReference','paymentUpdatedAt']) &&
+        after.paymentUpdatedAt == request.time && after.paymentAttemptId.matches('^[A-Za-z0-9]{20}$') &&
+        ((before.paymentStatus in ['pending','failed','cancelled'] && after.paymentStatus == 'pending' && after.paymentReference == '' &&
+          ((before.paymentStatus == 'pending' && before.paymentAttemptId != '' && after.paymentAttemptId == before.paymentAttemptId) ||
+            (before.paymentAttemptId != after.paymentAttemptId && (before.paymentStatus != 'pending' || before.paymentAttemptId == '')))) ||
+        (before.paymentStatus == 'pending' && before.paymentAttemptId != '' && after.paymentAttemptId == before.paymentAttemptId &&
+          after.paymentStatus in ['succeeded','failed','cancelled'] &&
+          after.paymentReference == (after.paymentStatus == 'succeeded' ? 'mock_' + bookingId + '_' + after.paymentAttemptId : '')));
+    }
+    // The booking ID is passed explicitly below; no real-money payment fields
+    // are writable by clients. Local simulations can never assert Razorpay proof.
+    function validBooking(id) {
+      let d = request.resource.data;
+      let l = item(d.listingId);
+      let after = itemAfter(d.listingId);
+      return d.keys().hasOnly(['listingId','title','buyerId','sellerId','buyerName','sellerName','participants','mode','status','total','days','startAt','endAt','pickupAt','pickupSpot','createdAt','paymentMethod','paymentStatus','paymentReference','paymentAttemptId']) &&
+        ((!d.keys().hasAny(['paymentMethod','paymentStatus','paymentReference','paymentAttemptId'])) ||
+          (d.keys().hasAll(['paymentMethod','paymentStatus','paymentReference','paymentAttemptId']) &&
+            d.paymentMethod == 'mock' && d.paymentStatus == 'pending' && d.paymentReference == '' && d.paymentAttemptId == '')) &&
+        l.status == 'available' && l.ownerId != request.auth.uid &&
+        d.buyerId == request.auth.uid && d.sellerId == l.ownerId &&
+        d.buyerName == userName(request.auth.uid) && d.sellerName == l.ownerName && d.title == l.title &&
+        d.participants == [d.buyerId,d.sellerId] && d.status == 'confirmed' &&
+        d.createdAt == request.time && d.pickupAt is timestamp && d.pickupAt > request.time &&
+        d.pickupAt < request.time + duration.value(366,'d') && text(d.pickupSpot,3,120) &&
+        d.startAt is timestamp && d.endAt is timestamp && d.days is int &&
+        ((d.mode == 'buy' && l.salePrice > 0 && d.total == l.salePrice && d.days == 0) ||
+          (d.mode == 'rent' && l.dailyRate > 0 && d.days >= 1 && d.days <= 90 &&
+            d.endAt - d.startAt == duration.value(d.days,'d') &&
+            d.startAt > request.time - duration.value(1,'d') &&
+            d.pickupAt >= d.startAt && d.pickupAt < d.endAt &&
+            d.total >= l.dailyRate * d.days - 0.001 && d.total <= l.dailyRate * d.days + 0.001)) &&
+        after.status == 'reserved' && after.activeBookingId == id;
+    }
+    match /conversations/{id} {
+      allow list: if member() && request.auth.uid in resource.data.participants;
+      allow get: if member() && (id.matches('^.*_' + request.auth.uid + '$') || request.auth.uid in resource.data.participants);
+      allow create: if member() &&
+        request.resource.data.keys().hasOnly(['listingId','title','buyerId','sellerId','participants','buyerName','sellerName','createdAt']) &&
+        id == request.resource.data.listingId + '_' + request.auth.uid &&
+        request.resource.data.buyerId == request.auth.uid &&
+        request.resource.data.sellerId == item(request.resource.data.listingId).ownerId &&
+        request.resource.data.sellerId != request.auth.uid &&
+        request.resource.data.title == item(request.resource.data.listingId).title &&
+        request.resource.data.buyerName == userName(request.auth.uid) &&
+        request.resource.data.sellerName == item(request.resource.data.listingId).ownerName &&
+        request.resource.data.participants == [request.auth.uid,request.resource.data.sellerId] &&
+        request.resource.data.createdAt == request.time;
+      allow update,delete: if false;
+    }
+    match /conversations/{conversationId}/messages/{messageId} {
+      function participant() {return member() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;}
+      allow read: if participant();
+      allow create: if participant() && request.resource.data.senderId == request.auth.uid && request.resource.data.createdAt == request.time &&
+        ((request.resource.data.keys().hasOnly(['senderId','text','createdAt']) && text(request.resource.data.text,1,2000)) ||
+          (request.resource.data.keys().hasOnly(['senderId','type','durationMs','audioId','createdAt']) &&
+            request.resource.data.type == 'audio' && request.resource.data.audioId == messageId &&
+            request.resource.data.durationMs is int && request.resource.data.durationMs >= 100 && request.resource.data.durationMs <= 15000 &&
+            getAfter(/databases/$(database)/documents/conversations/$(conversationId)/audio/$(messageId)).data.senderId == request.auth.uid &&
+            getAfter(/databases/$(database)/documents/conversations/$(conversationId)/audio/$(messageId)).data.durationMs == request.resource.data.durationMs));
+      allow update,delete: if false;
+    }
+    function conversationParticipant(conversationId) {
+      return member() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+    }
+    match /conversations/{conversationId}/audio/{messageId} {
+      allow read: if conversationParticipant(conversationId);
+      allow create: if conversationParticipant(conversationId) &&
+        request.resource.data.keys().hasOnly(['senderId','data','contentType','durationMs','createdAt']) &&
+        request.resource.data.senderId == request.auth.uid && request.resource.data.createdAt == request.time &&
+        request.resource.data.contentType == 'audio/wav' &&
+        request.resource.data.durationMs is int && request.resource.data.durationMs >= 100 && request.resource.data.durationMs <= 15000 &&
+        text(request.resource.data.data,2192,320060) && request.resource.data.data.matches('^UklGR[A-Za-z0-9+/]*={0,2}$') &&
+        getAfter(/databases/$(database)/documents/conversations/$(conversationId)/messages/$(messageId)).data.type == 'audio' &&
+        getAfter(/databases/$(database)/documents/conversations/$(conversationId)/messages/$(messageId)).data.senderId == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/conversations/$(conversationId)/messages/$(messageId)).data.durationMs == request.resource.data.durationMs;
+      allow update,delete: if false;
+    }
+    match /conversations/{conversationId}/reads/{uid} {
+      allow read: if conversationParticipant(conversationId) && request.auth.uid == uid;
+      allow create: if conversationParticipant(conversationId) && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly(['readAt']) && request.resource.data.readAt is timestamp && request.resource.data.readAt <= request.time;
+      allow update: if conversationParticipant(conversationId) && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly(['readAt']) && request.resource.data.readAt is timestamp &&
+        request.resource.data.readAt <= request.time && request.resource.data.readAt >= resource.data.readAt;
+      allow delete: if false;
+    }
+  }
+}
