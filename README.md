@@ -6,7 +6,7 @@ Repository owner: [Praneethvelagapudi](https://github.com/Praneethvelagapudi).
 
 ## Current repository status
 
-Praneeth's module imports and Mohith's navigation, state and build imports are now committed through their respective authenticated accounts. A fresh checkout is still not a complete runnable application: Chenchu's booking/notification modules and Poojith's UI modules, including shared application presentation, still need to be added.
+Praneeth's authentication/Firebase/messaging imports, Mohith's navigation/state/build imports, and Poojith's UI/theme/presentation imports are now committed through their respective authenticated accounts. A fresh checkout is still incomplete: Chenchu's booking, payment simulation, PDF and notification modules remain to be added.
 
 The complete local application is version 1.0.3 (4). Its earlier verification included 41 passing Flutter tests, clean analysis, and Android 10 booking/message notification checks. Those are results for the complete application, not a claim that this partial checkout can currently pass the same checks.
 
@@ -17,7 +17,7 @@ The complete local application is version 1.0.3 (4). Its earlier verification in
 | V. Praneeth | [Praneethvelagapudi](https://github.com/Praneethvelagapudi) | Authentication, Firebase, messaging and voice | Included |
 | M. Mohith | [MohithKumar128](https://github.com/MohithKumar128) | Navigation, state and release readiness | Included through authenticated Mohith account |
 | R. Chenchu Siva Sai | [Chenchu2007](https://github.com/Chenchu2007) | Booking confirmations, notifications, payment simulation and PDFs | Awaiting own account's commits |
-| V. Poojith Kumar | [poojithkumarvemisetty](https://github.com/poojithkumarvemisetty) | UI design, theme and responsive layouts | Awaiting own account's commits |
+| V. Poojith Kumar | [poojithkumarvemisetty](https://github.com/poojithkumarvemisetty) | UI design, theme and responsive layouts | Included through authenticated Poojith account |
 
 Teammate accounts are invited as collaborators with write access. Each member must accept the invitation before pushing. An invitation alone does not create contributor credit.
 
@@ -33,7 +33,7 @@ Shared services contain other modules' integration points. Importing a shared fi
 
 ## History and contribution process
 
-This repository was created on 22 October 2026 after the existing application had been developed. Current module commits explicitly import existing work using real dates; they do not establish regular commits during earlier development. Praneeth and Mohith are recorded as author and committer for their respective imports. Each upload uses that member's authenticated Git account; assisted operations are performed on the account owner's behalf. See [the contribution process](CONTRIBUTING.md) and [team responsibilities](docs/TEAM_CONTRIBUTIONS.md).
+This repository was created on 22 October 2026 after the existing application had been developed. Current module commits explicitly import existing work using real dates; they do not establish regular commits during earlier development. Praneeth, Mohith and Poojith are recorded as author and committer for their respective imports. Each upload uses that member's authenticated Git account; assisted operations are performed on the account owner's behalf. See [the contribution process](CONTRIBUTING.md) and [team responsibilities](docs/TEAM_CONTRIBUTIONS.md).
 
 ## Mohith's published modules
 
@@ -43,6 +43,15 @@ This repository was created on 22 October 2026 after the existing application ha
 - Android build configuration and platform declarations.
 - Existing iOS scaffold, without a claim of iOS device validation.
 - Developer tooling and historical release-readiness documentation.
+
+## Poojith's published modules
+
+- UniMarket branding, app icons and Android launch appearance.
+- Material theme and shared application presentation.
+- Reusable UI states and bounded listing-photo processing.
+- Marketplace discovery and listing-detail layouts.
+- Listing forms and profile preferences presentation.
+- Web presentation scaffold and demonstration guide.
 
 ## Setup after all modules are added
 
